@@ -1,0 +1,35 @@
+Sub autoDescription()
+
+    Dim oDoc As AssemblyDocument
+    Set oDoc = ThisApplication.ActiveDocument
+
+    Dim i As Integer
+    Dim referencedDoc As Document
+    Dim totalReferenced As Integer
+    totalReferenced = oDoc.AllReferencedDocuments.Count
+
+    Dim partNumber As String
+    Dim description As String
+    Dim splitFullName As Variant
+    
+      For i = 1 To totalReferenced
+        Set referencedDoc = oDoc.AllReferencedDocuments.Item(i)
+        Dim refCategory As String
+        refCategory = referencedDoc.FilePropertySets.Item(2).Item(1).Value ' .Item(2) - ïàðàìåòðû .Item(1) - êàòåãîðèÿ
+        If refCategory = "2" Or refCategory = "3" Then
+            Dim displayName As String
+            displayName = referencedDoc.displayName
+            splitFullName = Split(displayName, " ")
+            partNumber = splitFullName(0)
+            referencedDoc.FilePropertySets.Item(3).Item(2).Value = partNumber
+           
+            If UBound(splitFullName) > 0 Then ' Îáúåäèíÿåì ÷àñòè ñ ïðîáåëîì
+                description = Right(displayName, Len(displayName) - Len(partNumber) - 1)
+            End If
+            description = Left(description, Len(description) - 4) ' Óáèðàåì ôîðìàò .ipt ñ îáîçíà÷åíèÿ
+            referencedDoc.FilePropertySets.Item(3).Item(14).Value = description
+            description = ""
+        End If
+      Next i
+
+End Sub
