@@ -1,3 +1,12 @@
+'Module
+Sub RunAutoDescriptionForm()
+    autoDescriptionForm.Show
+End Sub
+
+
+
+
+'UserForm
     Dim refDescription As String
     Dim refPartNumber As String
     Dim refPartNumberContrast As String
@@ -84,8 +93,8 @@ Private Sub btnPath_Click()
                         If (refPartNumber <> refPartNumberContrast) Then
                             Call primaryApp(refDoc)
                             refDoc.FilePropertySets.Item(4).Item(1).Value = refPrimaryApp
+                            refPartNumber = ""
                         End If
-                    refPartNumber = ""
                     End If
                 End If
             End If
@@ -106,7 +115,6 @@ Private Sub btnPath_Click()
             If CheckBoxCategory.Value = True Then Call setOCategory(oDoc)
             If CheckBoxResNames.Value = True Then Call setOResponsibleNames(oDoc)
             refPartNumber = ""
-            End If
         End If
     End If
 End Sub
