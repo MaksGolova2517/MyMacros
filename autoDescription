@@ -1,35 +1,221 @@
-Sub autoDescription()
-
-    Dim oDoc As AssemblyDocument
-    Set oDoc = ThisApplication.ActiveDocument
-
-    Dim i As Integer
-    Dim referencedDoc As Document
-    Dim totalReferenced As Integer
-    totalReferenced = oDoc.AllReferencedDocuments.Count
-
-    Dim partNumber As String
-    Dim description As String
-    Dim splitFullName As Variant
-    
-      For i = 1 To totalReferenced
-        Set referencedDoc = oDoc.AllReferencedDocuments.Item(i)
-        Dim refCategory As String
-        refCategory = referencedDoc.FilePropertySets.Item(2).Item(1).Value ' .Item(2) - ïàðàìåòðû .Item(1) - êàòåãîðèÿ
-        If refCategory = "2" Or refCategory = "3" Then
-            Dim displayName As String
-            displayName = referencedDoc.displayName
-            splitFullName = Split(displayName, " ")
-            partNumber = splitFullName(0)
-            referencedDoc.FilePropertySets.Item(3).Item(2).Value = partNumber
-           
-            If UBound(splitFullName) > 0 Then ' Îáúåäèíÿåì ÷àñòè ñ ïðîáåëîì
-                description = Right(displayName, Len(displayName) - Len(partNumber) - 1)
-            End If
-            description = Left(description, Len(description) - 4) ' Óáèðàåì ôîðìàò .ipt ñ îáîçíà÷åíèÿ
-            referencedDoc.FilePropertySets.Item(3).Item(14).Value = description
-            description = ""
-        End If
-      Next i
-
+' For Module
+Sub RunAutoDescriptionForm()
+    autoDescriptionForm.Show
 End Sub
+
+
+'For user form
+    Dim refDescription As String
+    Dim refPartNumber As String
+    Dim refPartNumberContrast As String
+    Dim refDescriptionContrast As String
+    Dim refPrimaryApp As String
+    
+    Dim oDescription As String
+    Dim oPartNumber As String
+    Dim oPartNumberContrast As String
+    Dim oDescriptionContrast As String
+    Dim oPrimaryApp As String
+
+
+Private Sub UserForm_Initialize()
+
+    Dim setDoc As Document
+    Set setDoc = ThisApplication.ActiveDocument ' Ïîëó÷àåì àêòèâíûé äîêóìåíò
+    ChoosMetod.AddItem "1. Îáðàáîòêà ïî êàòåãîðèÿì"
+    ChoosMetod.AddItem "2. Îáðàáîòêà ïî ðàñïîëîæåíèþ ôàéëîâ"
+    Dim a As String
+    resNameAuthor.Value = setDoc.ReferencedFileDescriptors.Application.UserName
+    
+End Sub
+
+
+Private Sub ChoosMetod_Change()    ' Ïðîâåðÿåì, êàêîé ìåòîä âûáðàí
+
+    If ChoosMetod.ListIndex = 0 Then ' Åñëè âûáðàí "1. ìåòîä" (èíäåêñ 0)
+        CheckBoxCategory.Enabled = False ' Äåëàåì ÷åêáîêñ íåäîñòóïíûì
+            ElseIf ChoosMetod.ListIndex = 1 Then ' Åñëè âûáðàí "2. ìåòîä" (èíäåêñ 1)
+                CheckBoxCategory.Enabled = True ' Äåëàåì ÷åêáîêñ äîñòóïíûì
+    End If
+    If ChoosMetod <> "" Then btnPath.Enabled = True
+End Sub
+
+
+
+
+Private Sub btnPath_Click()
+
+    Dim setDoc As Document
+    Set setDoc = ThisApplication.ActiveDocument ' Ïîëó÷àåì àêòèâíûé äîêóìåíò
+    Dim oDoc As Variant ' Îáúÿâëÿåì ïåðåìåííóþ îDoc êàê Variant ' Ïðîâåðÿåì òèï äîêóìåíòà
+    Set oDoc = setDoc
+    
+    Dim i As Integer
+    Dim refDoc As Document
+    Dim totalRef As Integer
+    totalRef = oDoc.AllReferencedDocuments.Count
+
+    Dim oCategory As String
+    Dim oProjectPath As String
+    oCategory = oDoc.FilePropertySets.Item(2).Item(1).Value ' .Item(2) - ïàðàìåòðû .Item(1) - êàòåãîðèÿ
+
+    Dim beginProjectPath As String
+    Dim libProjectPath As String
+
+    beginProjectPath = "Z:\Òåõ îòäåë\0.1.ÏÐÎÅÊÒÛ (presale)"
+    libProjectPath = "Z:\Òåõ îòäåë\0.1.ÏÐÎÅÊÒÛ (presale)\Áèáëèîòåêà ïîêóïíûõ êîìïëåêòóþùèõ"
+    
+    If CheckBoxPart.Value = True Then
+        Dim refProjectPath As String
+        Dim refCategory As String
+        For i = 1 To totalRef
+            Set refDoc = oDoc.AllReferencedDocuments.Item(i)
+            refProjectPath = refDoc.FullFileName
+            refCategory = refDoc.FilePropertySets.Item(2).Item(1).Value ' .Item(2) - ïàðàìåòðû .Item(1) - êàòåãîðèÿ
+            refPartNumberContrast = refDoc.FilePropertySets.Item(3).Item(2).Value
+            refDescriptionContrast = refDoc.FilePropertySets.Item(3).Item(14).Value
+            
+            If ChoosMetod.ListIndex = 0 Then
+                If refCategory = "2" Or refCategory = "3" Then
+                    Call setRefDescription(refDoc)
+                    If CheckBoxResNames.Value = True Then Call setRefResponsibleNames(refDoc)
+                    If CheckBoxPrimaryApp.Value = True Then
+                        If (refPartNumber <> refPartNumberContrast) Then
+                            Call primaryApp(refDoc)
+                            refDoc.FilePropertySets.Item(4).Item(1).Value = refPrimaryApp
+                        End If
+                    refPartNumber = ""
+                    End If
+                End If
+            End If
+            
+            If ChoosMetod.ListIndex = 1 Then
+                If Left(refProjectPath, Len(beginProjectPath)) = "Z:\Òåõ îòäåë\0.1.ÏÐÎÅÊÒÛ (presale)" And Left(refProjectPath, Len(libProjectPath)) <> "Z:\Òåõ îòäåë\0.1.ÏÐÎÅÊÒÛ (presale)\Áèáëèîòåêà ïîêóïíûõ êîìïëåêòóþùèõ" Then
+                    Call setRefDescription(refDoc)
+                    If CheckBoxCategory.Value = True Then Call setRefCategory(refDoc)
+                    If CheckBoxResNames.Value = True Then Call setRefResponsibleNames(refDoc)
+                    If CheckBoxPrimaryApp.Value = True Then
+                        If (refPartNumber <> refPartNumberContrast) Then
+                            Call primaryApp(refDoc)
+                            refDoc.FilePropertySets.Item(4).Item(1).Value = refPrimaryApp
+                        End If
+                    refPartNumber = ""
+                    End If
+                End If
+            End If
+        Next i
+    End If
+    
+    
+    
+    If ChoosMetod.ListIndex = 0 Then
+                If oCategory = "2" Or oCategory = "3" Then
+                    Call setODescription(oDoc)
+                    If CheckBoxResNames.Value = True Then Call setOResponsibleNames(oDoc)
+                End If
+    End If
+            
+            
+            If ChoosMetod.ListIndex = 1 Then
+                oProjectPath = oDoc.FullFileName
+                If Left(oProjectPath, Len(beginProjectPath)) = "Z:\Òåõ îòäåë\0.1.ÏÐÎÅÊÒÛ (presale)" And Left(oProjectPath, Len(libProjectPath)) <> "Z:\Òåõ îòäåë\0.1.ÏÐÎÅÊÒÛ (presale)\Áèáëèîòåêà ïîêóïíûõ êîìïëåêòóþùèõ" Then
+                    Call setODescription(oDoc)
+                    If CheckBoxCategory.Value = True Then Call setOCategory(oDoc)
+                    If CheckBoxResNames.Value = True Then Call setOResponsibleNames(oDoc)
+                    If CheckBoxPrimaryApp.Value = True Then
+                    refPartNumber = ""
+                    End If
+                End If
+            End If         
+End Sub
+
+
+Private Sub setRefDescription(refDoc As Document)
+
+    Dim refDisplayName As String
+    refDisplayName = refDoc.displayName
+    splitRefDisplayName = Split(refDisplayName, " ")
+    refPartNumber = splitRefDisplayName(0)
+    refDoc.FilePropertySets.Item(3).Item(2).Value = refPartNumber
+    If UBound(splitRefDisplayName) > 0 Then ' Îáúåäèíÿåì ÷àñòè ñ ïðîáåëîì
+        refDescription = Right(refDisplayName, Len(refDisplayName) - Len(refPartNumber) - 1)
+    End If
+    refDescription = Left(refDescription, Len(refDescription) - 4) ' Óáèðàåì ôîðìàò .ipt ñ îáîçíà÷åíèÿ
+    refDoc.FilePropertySets.Item(3).Item(14).Value = refDescription
+    
+End Sub
+
+
+Private Sub setRefCategory(refDoc As Document)
+        Select Case refDoc.DocumentType ' Îïðåäåëÿåì òèï äîêóìåíòà
+            Case kPartDocumentObject ' Åñëè ñáîðêà, òî ïðèñâàèâàåì 3 êàòåãîðèþ
+                refCategory = "3"
+            Case kAssemblyDocumentObject ' Åñëè äåòàëü, òî ïðèñâàèâàåì 2 êàòåãîðèþ
+                refCategory = "2"
+        End Select
+End Sub
+
+
+Private Sub setRefResponsibleNames(refDoc As Document)
+    If refDoc.FilePropertySets.Item(3).Item(5).Value = "" Then refDoc.FilePropertySets.Item(3).Item(5).Value = resNameProv.Value
+    If refDoc.FilePropertySets.Item(3).Item(7).Value = "" Then refDoc.FilePropertySets.Item(3).Item(7).Value = resNameNKontr.Value
+    If refDoc.FilePropertySets.Item(3).Item(19).Value = "" Then refDoc.FilePropertySets.Item(3).Item(19).Value = resNameUtv.Value
+    If refDoc.FilePropertySets.Item(1).Item(3).Value = "" Or refDoc.FilePropertySets.Item(1).Item(3).Value = "ICECO" Then refDoc.FilePropertySets.Item(1).Item(3).Value = resNameAuthor.Value
+End Sub
+
+
+Private Sub primaryApp(refDoc As Document)
+    Dim refDisplayNamePrimaryApp As String
+    Dim splitRefDisplayNamePrimaryApp() As String ' Îáúÿâëÿåì êàê ìàññèâ ñòðîê
+    refDisplayNamePrimaryApp = refDoc.ReferencingDocuments.Item(1).displayName
+    splitRefDisplayNamePrimaryApp = Split(refDisplayNamePrimaryApp, " ")
+    refPrimaryApp = splitRefDisplayNamePrimaryApp(0)
+End Sub
+
+
+
+
+
+
+
+
+
+
+
+
+
+Private Sub setODescription(oDoc As Variant)
+
+    Dim oDisplayName As String
+    oDisplayName = oDoc.displayName
+    splitODisplayName = Split(oDisplayName, " ")
+    oPartNumber = splitODisplayName(0)
+    oDoc.FilePropertySets.Item(3).Item(2).Value = oPartNumber
+    If UBound(splitODisplayName) > 0 Then ' Îáúåäèíÿåì ÷àñòè ñ ïðîáåëîì
+        oDescription = Right(oDisplayName, Len(oDisplayName) - Len(oPartNumber) - 1)
+    End If
+    oDescription = Left(oDescription, Len(oDescription) - 4) ' Óáèðàåì ôîðìàò .ipt ñ îáîçíà÷åíèÿ
+    oDoc.FilePropertySets.Item(3).Item(14).Value = oDescription
+    refPartNumber = ""
+    
+End Sub
+
+Private Sub setOResponsibleNames(oDoc As Variant)
+    If oDoc.FilePropertySets.Item(3).Item(5).Value = "" Then oDoc.FilePropertySets.Item(3).Item(5).Value = resNameProv.Value
+    If oDoc.FilePropertySets.Item(3).Item(7).Value = "" Then oDoc.FilePropertySets.Item(3).Item(7).Value = resNameNKontr.Value
+    If oDoc.FilePropertySets.Item(3).Item(19).Value = "" Then oDoc.FilePropertySets.Item(3).Item(19).Value = resNameUtv.Value
+    If oDoc.FilePropertySets.Item(1).Item(3).Value = "" Or oDoc.FilePropertySets.Item(1).Item(3).Value = "ICECO" Then oDoc.FilePropertySets.Item(1).Item(3).Value = resNameAuthor.Value
+End Sub
+
+Private Sub setOCategory(oDoc As Variant)
+        Select Case oDoc.DocumentType ' Îïðåäåëÿåì òèï äîêóìåíòà
+            Case kPartDocumentObject ' Åñëè ñáîðêà, òî ïðèñâàèâàåì 3 êàòåãîðèþ
+                refCategory = "3"
+            Case kAssemblyDocumentObject ' Åñëè äåòàëü, òî ïðèñâàèâàåì 2 êàòåãîðèþ
+                refCategory = "2"
+        End Select
+End Sub
+
+
+
+
