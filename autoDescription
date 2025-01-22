@@ -22,10 +22,9 @@ End Sub
 Private Sub UserForm_Initialize()
     Dim setDoc As Document
     Set setDoc = ThisApplication.ActiveDocument ' Ïîëó÷àåì àêòèâíûé äîêóìåíò
+    resNameAuthor.Value = setDoc.ReferencedFileDescriptors.Application.UserName
     ChoosMetod.AddItem "1. Îáðàáîòêà ïî êàòåãîðèÿì"
     ChoosMetod.AddItem "2. Îáðàáîòêà ïî ðàñïîëîæåíèþ ôàéëîâ"
-    Dim a As String
-    resNameAuthor.Value = setDoc.ReferencedFileDescriptors.Application.UserName
 End Sub
 
 
@@ -45,6 +44,7 @@ Private Sub btnPath_Click()
     Set oDoc = setDoc
     
     Dim i As Integer
+    Dim n As Integer
     Dim refDoc As Document
     Dim totalRef As Integer
     totalRef = oDoc.AllReferencedDocuments.Count
@@ -75,11 +75,15 @@ Private Sub btnPath_Click()
                     If CheckBoxResNames.Value = True Then Call setRefResponsibleNames(refDoc)
                     If CheckBoxPrimaryApp.Value = True Then
                         If (refPartNumber <> refPartNumberContrast) Then
-                            Call primaryApp(refDoc)
-                            refDoc.FilePropertySets.Item(4).Item(1).Value = refPrimaryApp
+                            For n = 1 To refDoc.FilePropertySets.Item(4).Count
+                                If refDoc.FilePropertySets.Item(4).Item(n).DisplayName = "Ïåðâè÷ ïðèìåí" Then
+                                    Call primaryApp(refDoc)
+                                    refDoc.FilePropertySets.Item(4).Item(n).Value = refPrimaryApp
+                                End If
+                            Next n
                         End If
-                    refPartNumber = ""
                     End If
+                    refPartNumber = ""
                 End If
             End If
             
@@ -91,11 +95,15 @@ Private Sub btnPath_Click()
                     If CheckBoxResNames.Value = True Then Call setRefResponsibleNames(refDoc)
                     If CheckBoxPrimaryApp.Value = True Then
                         If (refPartNumber <> refPartNumberContrast) Then
-                            Call primaryApp(refDoc)
-                            refDoc.FilePropertySets.Item(4).Item(1).Value = refPrimaryApp
-                            refPartNumber = ""
+                            For n = 1 To refDoc.FilePropertySets.Item(4).Count
+                                If refDoc.FilePropertySets.Item(4).Item(n).DisplayName = "Ïåðâè÷ ïðèìåí" Then
+                                    Call primaryApp(refDoc)
+                                    refDoc.FilePropertySets.Item(4).Item(n).Value = refPrimaryApp
+                                End If
+                            Next n
                         End If
                     End If
+                    refPartNumber = ""
                 End If
             End If
         Next i
@@ -121,7 +129,7 @@ End Sub
 
 Private Sub setRefDescription(refDoc As Document)
     Dim refDisplayName As String
-    refDisplayName = refDoc.displayName
+    refDisplayName = refDoc.DisplayName
     splitRefDisplayName = Split(refDisplayName, " ")
     refPartNumber = splitRefDisplayName(0)
     refDoc.FilePropertySets.Item(3).Item(2).Value = refPartNumber
@@ -152,14 +160,14 @@ End Sub
 Private Sub primaryApp(refDoc As Document)
     Dim refDisplayNamePrimaryApp As String
     Dim splitRefDisplayNamePrimaryApp() As String ' Îáúÿâëÿåì êàê ìàññèâ ñòðîê
-    refDisplayNamePrimaryApp = refDoc.ReferencingDocuments.Item(1).displayName
+    refDisplayNamePrimaryApp = refDoc.ReferencingDocuments.Item(1).DisplayName
     splitRefDisplayNamePrimaryApp = Split(refDisplayNamePrimaryApp, " ")
     refPrimaryApp = splitRefDisplayNamePrimaryApp(0)
 End Sub
 
 Private Sub setODescription(oDoc As Variant)
     Dim oDisplayName As String
-    oDisplayName = oDoc.displayName
+    oDisplayName = oDoc.DisplayName
     splitODisplayName = Split(oDisplayName, " ")
     oPartNumber = splitODisplayName(0)
     oDoc.FilePropertySets.Item(3).Item(2).Value = oPartNumber
